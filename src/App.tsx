@@ -1,8 +1,9 @@
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
 import { Canvas } from "@react-three/fiber"
 import { OrbitControls, useGLTF } from "@react-three/drei"
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 import type { Object3D } from "three"
+import { Suspense } from "react"
 
 // Plaques
 const PLAQUES: Record<string, { title: string; description: string }> = {
@@ -236,11 +237,17 @@ const CAMERA_START = {
 
 // Room
 function Room({
-  onObjectClick
+  onObjectClick,
+  onLoaded
 }: {
   onObjectClick: (name: string | null) => void
+  onLoaded: () => void
 }) {
   const { scene } = useGLTF("/models/mom-museum.glb")
+
+  useEffect(() => {
+    onLoaded()
+  }, [scene])
 
   return (
     <primitive
@@ -259,10 +266,10 @@ function Room({
 }
 
 // App
-
 export default function App() {
   const controlsRef = useRef<OrbitControlsImpl>(null)
   const [activePlaque, setActivePlaque] = useState<string | null>(null)
+  const [loaded, setLoaded] = useState(false)
 
   function resetView() {
     const ctrl = controlsRef.current
@@ -298,7 +305,12 @@ export default function App() {
       >
         <ambientLight intensity={1.5} />
         <directionalLight position={[5, 5, 5]} intensity={2} />
-        <Room onObjectClick={(name) => setActivePlaque(name)} />
+        <Suspense fallback={null}>
+          <Room
+            onObjectClick={(name) => setActivePlaque(name)}
+            onLoaded={() => setLoaded(true)}
+          />
+        </Suspense>
         <OrbitControls
           ref={controlsRef}
           makeDefault
@@ -312,7 +324,6 @@ export default function App() {
         />
       </Canvas>
 
-      {/* UI overlay */}
       <div
         style={{
           position: "absolute",
@@ -321,7 +332,6 @@ export default function App() {
           fontFamily: "'Lora', serif"
         }}
       >
-        {/* title */}
         <div
           style={{
             position: "absolute",
@@ -368,7 +378,6 @@ export default function App() {
           </p>
         </div>
 
-        {/* controls legend + reset */}
         <div
           style={{
             position: "absolute",
@@ -455,7 +464,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* museum plaque */}
         {plaque && (
           <div
             style={{
@@ -536,6 +544,54 @@ export default function App() {
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
+      {!loaded && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "#f5f0eb",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10
+          }}
+        >
+          <h1
+            style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: 32,
+              fontWeight: 400,
+              color: "#3d2f3f",
+              margin: "0 0 8px"
+            }}
+          >
+            MOM
+          </h1>
+          <p
+            style={{
+              fontFamily: "'Lora', serif",
+              fontStyle: "italic",
+              fontSize: 14,
+              color: "#9e8fa0",
+              margin: "0 0 32px"
+            }}
+          >
+            Museum of Mom
+          </p>
+          <p
+            style={{
+              fontFamily: "'Lora', serif",
+              fontSize: 12,
+              color: "#c9b8cb",
+              letterSpacing: "0.15em",
+              textTransform: "uppercase"
+            }}
+          >
+            Preparing the exhibition…
+          </p>
+        </div>
+      )}
     </main>
   )
 }
