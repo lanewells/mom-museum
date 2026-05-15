@@ -1,8 +1,8 @@
-import { useRef, useEffect, useState } from "react"
-import { Canvas, useFrame } from "@react-three/fiber"
+import { useRef, useState } from "react"
+import { Canvas } from "@react-three/fiber"
 import { OrbitControls, useGLTF } from "@react-three/drei"
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib"
-import type { Object3D, Type } from "three"
+import type { Object3D } from "three"
 
 // Plaques
 const PLAQUES: Record<string, { title: string; description: string }> = {
