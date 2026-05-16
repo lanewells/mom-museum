@@ -1,8 +1,10 @@
 import { useRef, useState, useEffect } from "react"
-import { Canvas } from "@react-three/fiber"
+import type { RefObject } from "react"
+import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { OrbitControls, useGLTF } from "@react-three/drei"
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 import type { Object3D } from "three"
+import { Vector3 } from "three"
 import { Suspense } from "react"
 
 // Plaques
@@ -235,14 +237,46 @@ const CAMERA_START = {
   target: [0, 1.3, -1.8] as [number, number, number]
 }
 
-// Room
-function Room({
-  onObjectClick,
-  onLoaded
-}: {
-  onObjectClick: (name: string | null) => void
+type CameraState = {
+  position: Vector3
+  target: Vector3
+}
+
+type RoomProps = {
+  onObjectClick: (name: string | null, point: Vector3 | null) => void
   onLoaded: () => void
+}
+
+// Camera animator
+function CameraAnimator({
+  targetState,
+  controls,
+  onDone
+}: {
+  targetState: CameraState | null
+  controls: RefObject<OrbitControlsImpl | null>
+  onDone: () => void
 }) {
+  const { camera } = useThree()
+
+  useFrame(() => {
+    if (!targetState || !controls.current) return
+    camera.position.lerp(targetState.position, 0.08)
+    controls.current.target.lerp(targetState.target, 0.08)
+    controls.current.update()
+
+    const posDist = camera.position.distanceTo(targetState.position)
+    const tgtDist = controls.current.target.distanceTo(targetState.target)
+    if (posDist < 0.01 && tgtDist < 0.01) {
+      onDone()
+    }
+  })
+
+  return null
+}
+
+// Room
+function Room({ onObjectClick, onLoaded }: RoomProps) {
   const { scene } = useGLTF("/models/mom-museum.glb")
 
   useEffect(() => {
@@ -254,6 +288,7 @@ function Room({
       }
     })
   }, [scene])
+
   return (
     <primitive
       object={scene}
@@ -262,11 +297,7 @@ function Room({
       onClick={(e: any) => {
         e.stopPropagation()
         const name = findPlaqueName(e.object)
-        if (name) {
-          onObjectClick(name)
-        } else {
-          onObjectClick(null)
-        }
+        onObjectClick(name, e.point ?? null)
       }}
     />
   )
@@ -277,13 +308,44 @@ export default function App() {
   const controlsRef = useRef<OrbitControlsImpl>(null)
   const [activePlaque, setActivePlaque] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
+  const [cameraTarget, setCameraTarget] = useState<CameraState | null>(null)
+  const savedCamera = useRef<CameraState | null>(null)
+
+  // Object click handler
+  function handleObjectClick(name: string | null, point: Vector3 | null) {
+    if (name && point) {
+      const ctrl = controlsRef.current
+      if (ctrl) {
+        savedCamera.current = {
+          position: ctrl.object.position.clone(),
+          target: ctrl.target.clone()
+        }
+      }
+      // Zoom in
+      const offset = new Vector3(0, 0.1, 0.6)
+      const zoomPos = point.clone().add(offset)
+      setCameraTarget({ position: zoomPos, target: point.clone() })
+      setActivePlaque(name)
+    } else {
+      closePlaque()
+    }
+  }
+
+  function closePlaque() {
+    setActivePlaque(null)
+    if (savedCamera.current) {
+      setCameraTarget(savedCamera.current)
+      savedCamera.current = null
+    }
+  }
 
   function resetView() {
-    const ctrl = controlsRef.current
-    if (!ctrl) return
-    ctrl.object.position.set(...CAMERA_START.position)
-    ctrl.target.set(...CAMERA_START.target)
-    ctrl.update()
+    setActivePlaque(null)
+    savedCamera.current = null
+    setCameraTarget({
+      position: new Vector3(...CAMERA_START.position),
+      target: new Vector3(...CAMERA_START.target)
+    })
   }
 
   const plaque = activePlaque ? PLAQUES[activePlaque] : null
@@ -306,10 +368,7 @@ export default function App() {
           far: 1000
         }}
         style={{ position: "absolute", inset: 0 }}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) setActivePlaque(null)
-        }}
-        onPointerMissed={() => setActivePlaque(null)}
+        onPointerMissed={closePlaque}
       >
         {/* bookshelf */}
         <pointLight
@@ -319,6 +378,7 @@ export default function App() {
           distance={6}
           decay={0.7}
         />
+
         {/* craft table lamp */}
         <pointLight
           position={[-3.2, 1.3, -0.5]}
@@ -327,6 +387,7 @@ export default function App() {
           distance={1}
           decay={1.5}
         />
+
         {/* desk lamp */}
         <pointLight
           position={[0.7, 1.5, -3.7]}
@@ -335,6 +396,7 @@ export default function App() {
           distance={10}
           decay={1.5}
         />
+
         {/* right wall */}
         <pointLight
           position={[2.7, 1.5, 0.5]}
@@ -343,6 +405,7 @@ export default function App() {
           distance={10}
           decay={2}
         />
+
         <ambientLight intensity={1.3} />
         <directionalLight
           position={[-1, 2, -1.7]}
@@ -351,12 +414,20 @@ export default function App() {
           castShadow
           shadow-mapSize={[2048, 2048]}
         />
+
+        <CameraAnimator
+          targetState={cameraTarget}
+          controls={controlsRef}
+          onDone={() => setCameraTarget(null)}
+        />
+
         <Suspense fallback={null}>
           <Room
-            onObjectClick={(name) => setActivePlaque(name)}
+            onObjectClick={handleObjectClick}
             onLoaded={() => setLoaded(true)}
           />
         </Suspense>
+
         <OrbitControls
           ref={controlsRef}
           makeDefault
@@ -364,9 +435,10 @@ export default function App() {
           enableZoom
           enableRotate
           target={CAMERA_START.target}
-          minDistance={0.5}
+          minDistance={0.05}
           maxDistance={10}
-          zoomSpeed={1.2}
+          zoomSpeed={1.7}
+          dampingFactor={0.15}
         />
       </Canvas>
 
@@ -570,7 +642,7 @@ export default function App() {
               {plaque.description}
             </p>
             <button
-              onClick={() => setActivePlaque(null)}
+              onClick={closePlaque}
               style={{
                 fontFamily: "'Lora', serif",
                 fontSize: 11,
@@ -590,6 +662,7 @@ export default function App() {
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
+
       {!loaded && (
         <div
           style={{
