@@ -247,11 +247,18 @@ function Room({
 
   useEffect(() => {
     onLoaded()
+    scene.traverse((obj: any) => {
+      if (obj.isMesh) {
+        obj.castShadow = true
+        obj.receiveShadow = true
+      }
+    })
   }, [scene])
-
   return (
     <primitive
       object={scene}
+      castShadow
+      receiveShadow
       onClick={(e: any) => {
         e.stopPropagation()
         const name = findPlaqueName(e.object)
@@ -291,6 +298,7 @@ export default function App() {
       }}
     >
       <Canvas
+        shadows
         camera={{
           position: CAMERA_START.position,
           fov: 42,
@@ -303,8 +311,46 @@ export default function App() {
         }}
         onPointerMissed={() => setActivePlaque(null)}
       >
-        <ambientLight intensity={1.5} />
-        <directionalLight position={[5, 5, 5]} intensity={2} />
+        {/* bookshelf */}
+        <pointLight
+          position={[-3.1, 1.4, -3.7]}
+          intensity={1}
+          color="#ffcc88"
+          distance={6}
+          decay={0.7}
+        />
+        {/* craft table lamp */}
+        <pointLight
+          position={[-3.2, 1.3, -0.5]}
+          intensity={0.5}
+          color="#ffcc88"
+          distance={1}
+          decay={1.5}
+        />
+        {/* desk lamp */}
+        <pointLight
+          position={[0.7, 1.5, -3.7]}
+          intensity={2}
+          color="#ffcc88"
+          distance={10}
+          decay={1.5}
+        />
+        {/* right wall */}
+        <pointLight
+          position={[2.7, 1.5, 0.5]}
+          intensity={2.5}
+          color="#ffcc88"
+          distance={10}
+          decay={2}
+        />
+        <ambientLight intensity={1.3} />
+        <directionalLight
+          position={[-1, 2, -1.7]}
+          intensity={2.2}
+          color="#ffeed7"
+          castShadow
+          shadow-mapSize={[2048, 2048]}
+        />
         <Suspense fallback={null}>
           <Room
             onObjectClick={(name) => setActivePlaque(name)}
