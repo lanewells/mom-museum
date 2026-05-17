@@ -54,6 +54,9 @@ function Room({ onObjectClick, onLoaded }: RoomProps) {
         obj.castShadow = true
         obj.receiveShadow = true
       }
+      if (obj.parent) {
+        console.log(`${obj.name} → parent: ${obj.parent.name}`)
+      }
     })
   }, [scene])
 
@@ -65,16 +68,15 @@ function Room({ onObjectClick, onLoaded }: RoomProps) {
       onClick={(e: any) => {
         e.stopPropagation()
         console.log("clicked:", e.object.name)
-        console.log("parent:", e.object.parent?.name)
-        const name = findPlaqueName(e.object)
-        console.log("plaque found:", name)
-        onObjectClick(name, e.point ?? null)
-        console.log("clicked:", e.object.name)
+        console.log("hit point:", e.point) // ← add this
         let current = e.object
         while (current) {
           console.log("chain:", current.name)
           current = current.parent
         }
+        const name = findPlaqueName(e.object)
+        console.log("plaque found:", name)
+        onObjectClick(name, e.point ?? null)
       }}
     />
   )
@@ -85,7 +87,6 @@ export default function App() {
   const [activePlaque, setActivePlaque] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [cameraTarget, setCameraTarget] = useState<CameraState | null>(null)
-  const savedCamera = useRef<CameraState | null>(null)
 
   // debug begin
   useEffect(() => {
@@ -110,13 +111,6 @@ export default function App() {
 
   function handleObjectClick(name: string | null, point: Vector3 | null) {
     if (name && point) {
-      const ctrl = controlsRef.current
-      if (ctrl) {
-        savedCamera.current = {
-          position: ctrl.object.position.clone(),
-          target: ctrl.target.clone()
-        }
-      }
       const offset = new Vector3(0, 0.1, 0.6)
       const zoomPos = point.clone().add(offset)
       setCameraTarget({ position: zoomPos, target: point.clone() })
@@ -128,15 +122,11 @@ export default function App() {
 
   function closePlaque() {
     setActivePlaque(null)
-    if (savedCamera.current) {
-      setCameraTarget(savedCamera.current)
-      savedCamera.current = null
-    }
+    setCameraTarget(null)
   }
 
   function resetView() {
     setActivePlaque(null)
-    savedCamera.current = null
     setCameraTarget({
       position: new Vector3(...CAMERA_START.position),
       target: new Vector3(...CAMERA_START.target)
