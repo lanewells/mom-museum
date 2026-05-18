@@ -12,6 +12,7 @@ import LoadingScreen from "./components/LoadingScreen"
 import ControlsLegend from "./components/ControlsLegend"
 import MuseumPlaque from "./components/MuseumPlaque"
 import MobileScreen from "./components/MobileScreen"
+import MusicPlayer from "./components/MusicPlayer"
 
 type RoomProps = {
   onObjectClick: (name: string | null, point: Vector3 | null) => void
@@ -88,7 +89,6 @@ export default function App() {
   const [cameraTarget, setCameraTarget] = useState<CameraState | null>(null)
   const isMobile = window.matchMedia("(pointer: coarse)").matches
 
-  // debug — navigate to any angle, press D to log position + target
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "d" || e.key === "D") {
@@ -113,13 +113,11 @@ export default function App() {
       const plaque = PLAQUES[name]
 
       if (plaque?.camera) {
-        // use the hand-tuned preset for this object
         setCameraTarget({
           position: new Vector3(...plaque.camera.position),
           target: new Vector3(...plaque.camera.target)
         })
       } else {
-        // fallback for anything without a preset yet
         const offset = new Vector3(0, 0.1, 0.6)
         const zoomPos = point.clone().add(offset)
         setCameraTarget({ position: zoomPos, target: point.clone() })
@@ -232,7 +230,6 @@ export default function App() {
           dampingFactor={0.15}
         />
       </Canvas>
-
       <div
         style={{
           position: "absolute",
@@ -286,9 +283,7 @@ export default function App() {
             Museum of Mom
           </p>
         </div>
-
         <ControlsLegend onReset={resetView} />
-
         {plaque && (
           <MuseumPlaque
             title={plaque.title}
@@ -297,11 +292,12 @@ export default function App() {
           />
         )}
       </div>
-
+      <div style={{ position: "absolute", top: 24, right: 24, zIndex: 100 }}>
+        <MusicPlayer />
+      </div>
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
-
       {!loaded && <LoadingScreen />}
     </main>
   )
