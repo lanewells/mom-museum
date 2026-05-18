@@ -11,6 +11,7 @@ import type { CameraState } from "./constants/camera"
 import LoadingScreen from "./components/LoadingScreen"
 import ControlsLegend from "./components/ControlsLegend"
 import MuseumPlaque from "./components/MuseumPlaque"
+import MobileScreen from "./components/MobileScreen"
 
 type RoomProps = {
   onObjectClick: (name: string | null, point: Vector3 | null) => void
@@ -81,6 +82,7 @@ export default function App() {
   const [activePlaque, setActivePlaque] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [cameraTarget, setCameraTarget] = useState<CameraState | null>(null)
+  const isMobile = window.matchMedia("(pointer: coarse)").matches
 
   // debug — navigate to any angle, press D to log position + target
   useEffect(() => {
@@ -139,6 +141,8 @@ export default function App() {
   }
 
   const plaque = activePlaque ? PLAQUES[activePlaque] : null
+
+  if (isMobile) return <MobileScreen />
 
   return (
     <main
