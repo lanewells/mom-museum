@@ -1,27 +1,12 @@
-import { useEffect, useRef, useState } from "react"
+type Props = {
+  muted: boolean
+  onToggle: () => void
+}
 
-export default function MusicPlayer() {
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [muted, setMuted] = useState(false)
-
-  useEffect(() => {
-    const audio = new Audio("/audio/HoliznaCC04jazz.mp3")
-    audio.loop = true
-    audio.volume = 0.35
-    audio.play().catch(() => {})
-    audioRef.current = audio
-    return () => audio.pause()
-  }, [])
-
-  function toggleMute() {
-    if (!audioRef.current) return
-    audioRef.current.muted = !muted
-    setMuted(!muted)
-  }
-
+export default function MusicPlayer({ muted, onToggle }: Props) {
   return (
     <button
-      onClick={toggleMute}
+      onClick={onToggle}
       style={{
         pointerEvents: "all",
         background: "rgba(255,250,245,0.85)",

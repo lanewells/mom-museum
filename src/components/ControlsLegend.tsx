@@ -30,7 +30,7 @@ export default function ControlsLegend({ onReset }: Props) {
         ["drag", "Rotate the room"],
         ["scroll", "Zoom in & out"],
         ["right-drag", "Pan around"],
-        ["click", "Read about an item"]
+        ["click", "Read about an artifact"]
       ].map(([key, desc]) => (
         <div
           key={key}

@@ -87,6 +87,8 @@ export default function App() {
   const [activePlaque, setActivePlaque] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [cameraTarget, setCameraTarget] = useState<CameraState | null>(null)
+  const [muted, setMuted] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   const isMobile = window.matchMedia("(pointer: coarse)").matches
 
   useEffect(() => {
@@ -108,10 +110,25 @@ export default function App() {
     return () => window.removeEventListener("keydown", handler)
   }, [])
 
+  function startMusic() {
+    if (audioRef.current) return
+    const audio = new Audio("/audio/HoliznaCC04jazz.mp3")
+    audio.loop = true
+    audio.volume = 0.35
+    audio.play()
+    audioRef.current = audio
+  }
+
+  function toggleMute() {
+    if (!audioRef.current) return
+    audioRef.current.muted = !muted
+    setMuted(!muted)
+  }
+
   function handleObjectClick(name: string | null, point: Vector3 | null) {
+    startMusic()
     if (name && point) {
       const plaque = PLAQUES[name]
-
       if (plaque?.camera) {
         setCameraTarget({
           position: new Vector3(...plaque.camera.position),
@@ -122,7 +139,6 @@ export default function App() {
         const zoomPos = point.clone().add(offset)
         setCameraTarget({ position: zoomPos, target: point.clone() })
       }
-
       setActivePlaque(name)
     } else {
       closePlaque()
@@ -164,7 +180,10 @@ export default function App() {
           far: 1000
         }}
         style={{ position: "absolute", inset: 0 }}
-        onPointerMissed={closePlaque}
+        onPointerMissed={() => {
+          startMusic()
+          closePlaque()
+        }}
       >
         <pointLight
           position={[-3.1, 1.4, -3.7]}
@@ -230,6 +249,7 @@ export default function App() {
           dampingFactor={0.15}
         />
       </Canvas>
+
       <div
         style={{
           position: "absolute",
@@ -283,7 +303,9 @@ export default function App() {
             Museum of Mom
           </p>
         </div>
+
         <ControlsLegend onReset={resetView} />
+
         {plaque && (
           <MuseumPlaque
             title={plaque.title}
@@ -292,12 +314,15 @@ export default function App() {
           />
         )}
       </div>
+
       <div style={{ position: "absolute", top: 24, right: 24, zIndex: 100 }}>
-        <MusicPlayer />
+        <MusicPlayer muted={muted} onToggle={toggleMute} />
       </div>
+
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
+
       {!loaded && <LoadingScreen />}
     </main>
   )
