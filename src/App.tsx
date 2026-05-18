@@ -50,12 +50,10 @@ function Room({ onObjectClick, onLoaded }: RoomProps) {
   useEffect(() => {
     onLoaded()
     scene.traverse((obj: any) => {
+      console.log(obj.name)
       if (obj.isMesh) {
         obj.castShadow = true
         obj.receiveShadow = true
-      }
-      if (obj.parent) {
-        console.log(`${obj.name} → parent: ${obj.parent.name}`)
       }
     })
   }, [scene])
@@ -67,15 +65,7 @@ function Room({ onObjectClick, onLoaded }: RoomProps) {
       receiveShadow
       onClick={(e: any) => {
         e.stopPropagation()
-        console.log("clicked:", e.object.name)
-        console.log("hit point:", e.point) // ← add this
-        let current = e.object
-        while (current) {
-          console.log("chain:", current.name)
-          current = current.parent
-        }
         const name = findPlaqueName(e.object)
-        console.log("plaque found:", name)
         onObjectClick(name, e.point ?? null)
       }}
     />
@@ -87,27 +77,6 @@ export default function App() {
   const [activePlaque, setActivePlaque] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [cameraTarget, setCameraTarget] = useState<CameraState | null>(null)
-
-  // debug begin
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "d" || e.key === "D") {
-        const ctrl = controlsRef.current
-        if (!ctrl) return
-        const p = ctrl.object.position
-        const t = ctrl.target
-        console.log(
-          `position: [${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)}]`
-        )
-        console.log(
-          `target: [${t.x.toFixed(2)}, ${t.y.toFixed(2)}, ${t.z.toFixed(2)}]`
-        )
-      }
-    }
-    window.addEventListener("keydown", handler)
-    return () => window.removeEventListener("keydown", handler)
-  }, [])
-  //debug end
 
   function handleObjectClick(name: string | null, point: Vector3 | null) {
     if (name && point) {
