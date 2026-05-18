@@ -472,6 +472,7 @@ export const PLAQUES: Record<
 }
 
 export function findPlaqueName(obj: any): string | null {
+  if (PLAQUES[obj.name]) return obj.name
   if (obj.parent && PLAQUES[obj.parent.name]) return obj.parent.name
   let current: any = obj.parent?.parent
   while (current) {

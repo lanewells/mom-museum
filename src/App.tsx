@@ -65,7 +65,11 @@ function Room({ onObjectClick, onLoaded }: RoomProps) {
       receiveShadow
       onClick={(e: any) => {
         e.stopPropagation()
+        console.log("clicked:", e.object.name)
+        console.log("parent:", e.object.parent?.name)
+        console.log("grandparent:", e.object.parent?.parent?.name)
         const name = findPlaqueName(e.object)
+        console.log("resolved plaque:", name)
         onObjectClick(name, e.point ?? null)
       }}
     />
