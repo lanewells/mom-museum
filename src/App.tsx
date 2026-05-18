@@ -78,11 +78,43 @@ export default function App() {
   const [loaded, setLoaded] = useState(false)
   const [cameraTarget, setCameraTarget] = useState<CameraState | null>(null)
 
+  // debug — navigate to any angle, press D to log position + target
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "d" || e.key === "D") {
+        const ctrl = controlsRef.current
+        if (!ctrl) return
+        const p = ctrl.object.position
+        const t = ctrl.target
+        console.log(
+          `position: [${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)}]`
+        )
+        console.log(
+          `target: [${t.x.toFixed(2)}, ${t.y.toFixed(2)}, ${t.z.toFixed(2)}]`
+        )
+      }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [])
+
   function handleObjectClick(name: string | null, point: Vector3 | null) {
     if (name && point) {
-      const offset = new Vector3(0, 0.1, 0.6)
-      const zoomPos = point.clone().add(offset)
-      setCameraTarget({ position: zoomPos, target: point.clone() })
+      const plaque = PLAQUES[name]
+
+      if (plaque?.camera) {
+        // use the hand-tuned preset for this object
+        setCameraTarget({
+          position: new Vector3(...plaque.camera.position),
+          target: new Vector3(...plaque.camera.target)
+        })
+      } else {
+        // fallback for anything without a preset yet
+        const offset = new Vector3(0, 0.1, 0.6)
+        const zoomPos = point.clone().add(offset)
+        setCameraTarget({ position: zoomPos, target: point.clone() })
+      }
+
       setActivePlaque(name)
     } else {
       closePlaque()

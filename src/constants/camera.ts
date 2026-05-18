@@ -9,3 +9,8 @@ export type CameraState = {
   position: Vector3
   target: Vector3
 }
+
+export type PresetCamera = {
+  position: [number, number, number]
+  target: [number, number, number]
+}
