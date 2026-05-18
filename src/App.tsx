@@ -47,11 +47,11 @@ function CameraAnimator({
 
 function Room({ onObjectClick, onLoaded }: RoomProps) {
   const { scene } = useGLTF("/models/mom-museum.glb")
+  const pointerDownPos = useRef<{ x: number; y: number } | null>(null)
 
   useEffect(() => {
     onLoaded()
     scene.traverse((obj: any) => {
-      console.log(obj.name)
       if (obj.isMesh) {
         obj.castShadow = true
         obj.receiveShadow = true
@@ -64,13 +64,17 @@ function Room({ onObjectClick, onLoaded }: RoomProps) {
       object={scene}
       castShadow
       receiveShadow
-      onClick={(e: any) => {
+      onPointerDown={(e: any) => {
+        pointerDownPos.current = { x: e.clientX, y: e.clientY }
+      }}
+      onPointerUp={(e: any) => {
+        if (!pointerDownPos.current) return
+        const dx = e.clientX - pointerDownPos.current.x
+        const dy = e.clientY - pointerDownPos.current.y
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        if (dist > 4) return
         e.stopPropagation()
-        console.log("clicked:", e.object.name)
-        console.log("parent:", e.object.parent?.name)
-        console.log("grandparent:", e.object.parent?.parent?.name)
         const name = findPlaqueName(e.object)
-        console.log("resolved plaque:", name)
         onObjectClick(name, e.point ?? null)
       }}
     />
