@@ -150,7 +150,7 @@ export default function App() {
       }}
     >
       <Canvas
-        shadows
+        shadows="soft"
         camera={{
           position: CAMERA_START.position,
           fov: 42,
@@ -195,6 +195,7 @@ export default function App() {
           color="#ffeed7"
           castShadow
           shadow-mapSize={[2048, 2048]}
+          shadow-bias={-0.0005}
         />
 
         <CameraAnimator
